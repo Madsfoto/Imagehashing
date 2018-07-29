@@ -13,6 +13,7 @@ namespace Hashing
 {
     class Program
     {
+        // The hashing part (aka all below) is borrowed from https://github.com/juliasin/SimilarByHashes
         public List<int> set1 { get; set; }
         public List<int> set2 { get; set; }
         public double dist { get; set; }
@@ -261,7 +262,7 @@ namespace Hashing
 
         }
 
-        
+        // End of borrowed code.
 
         public string FilenameAnd_a_Hash(string file)
         {
