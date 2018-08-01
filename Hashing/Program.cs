@@ -470,6 +470,12 @@ namespace Hashing
             // but do I use it on the entire list and sort by lowest difference (and how do I get lowest difference?)
             //
 
+            // Ideally I want a database type thing where any sorting change results in moving of all the attached data
+            // hash attached to filename
+            // hamming distance attached to filename.
+            // 
+
+
 
 
         }
