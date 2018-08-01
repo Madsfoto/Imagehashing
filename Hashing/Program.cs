@@ -7,7 +7,8 @@ using System.Collections;
 using System.Drawing;
 using System.IO;
 using System.Windows.Media.Imaging;
-
+using System.Collections.Concurrent;
+using System.Threading;
 
 namespace Hashing
 {
@@ -264,6 +265,8 @@ namespace Hashing
 
         // End of borrowed code.
 
+
+        
         public string FilenameAnd_a_Hash(string file)
         {
             Bitmap bm = new Bitmap(file);
@@ -289,8 +292,7 @@ namespace Hashing
             bm.Dispose();
             //string filename = file + "__d_hash__" + filehash + ".jpg";
             string filename = file + "__d_hash__" + filehash;
-            int removeCount = Directory.GetCurrentDirectory().Count(); // count of x:\folder\
-            string actualFilename = file.Remove(0, removeCount + 1); // 0 based starting count, result: filename.jpg
+            string actualFilename = file.Remove(0, Directory.GetCurrentDirectory().Count()+ 1); // 0 based starting count, result: filename.jpg
 
             string returnName = actualFilename + ";" + filehash; // filename.jpg;HASH
 
@@ -326,6 +328,77 @@ namespace Hashing
             return returnName;
         }
 
+        public string csvInput_aHash(string currentfile, string comparefile)
+        {
+            Bitmap bmCurrent = new Bitmap(currentfile);
+            UInt64 filehashCurrent = aHash(bmCurrent);
+            bmCurrent.Dispose();
+
+            Bitmap bmCompare = new Bitmap(comparefile);
+            UInt64 filehashCompare = aHash(bmCompare);
+            bmCompare.Dispose();
+            string actualCurrent = currentfile.Remove(0, Directory.GetCurrentDirectory().Count() + 1); // 0 based starting count, result: filename.jpg
+            string actualcompare = comparefile.Remove(0, Directory.GetCurrentDirectory().Count() + 1); // 0 based starting count, result: filename.jpg
+
+
+            Int64 hammingDistance = Hamming(filehashCurrent, filehashCompare);
+
+            return actualCurrent+";"+actualcompare + ";" + hammingDistance;
+        } // result: currentfile;comparefile;hammingDistance
+        public string csvInput_dHash(string currentfile, string comparefile)
+        {
+            Bitmap bmCurrent = new Bitmap(currentfile);
+            UInt64 filehashCurrent = dHash(bmCurrent);
+            bmCurrent.Dispose();
+
+            Bitmap bmCompare = new Bitmap(comparefile);
+            UInt64 filehashCompare = dHash(bmCompare);
+            bmCompare.Dispose();
+            string actualCurrent = currentfile.Remove(0, Directory.GetCurrentDirectory().Count() + 1); // 0 based starting count, result: filename.jpg
+            string actualcompare = comparefile.Remove(0, Directory.GetCurrentDirectory().Count() + 1); // 0 based starting count, result: filename.jpg
+
+
+            Int64 hammingDistance = Hamming(filehashCurrent, filehashCompare);
+
+            return actualCurrent + ";" + actualcompare + ";" + hammingDistance;
+        }
+        public string csvInput_gHash(string currentfile, string comparefile)
+        {
+            Bitmap bmCurrent = new Bitmap(currentfile);
+            UInt64 filehashCurrent = gHash(bmCurrent);
+            bmCurrent.Dispose();
+
+            Bitmap bmCompare = new Bitmap(comparefile);
+            UInt64 filehashCompare = gHash(bmCompare);
+            bmCompare.Dispose();
+
+            string actualCurrent = currentfile.Remove(0, Directory.GetCurrentDirectory().Count() + 1); // 0 based starting count, result: filename.jpg
+            string actualcompare = comparefile.Remove(0, Directory.GetCurrentDirectory().Count() + 1); // 0 based starting count, result: filename.jpg
+
+
+            Int64 hammingDistance = Hamming(filehashCurrent, filehashCompare);
+
+            return actualCurrent + ";" + actualcompare + ";" + hammingDistance;
+        }
+        public string csvInput_pHash(string currentfile, string comparefile)
+        {
+            Bitmap bmCurrent = new Bitmap(currentfile);
+            UInt64 filehashCurrent = pHash(bmCurrent);
+            bmCurrent.Dispose();
+
+            Bitmap bmCompare = new Bitmap(comparefile);
+            UInt64 filehashCompare = pHash(bmCompare);
+            bmCompare.Dispose();
+
+            string actualCurrent = currentfile.Remove(0, Directory.GetCurrentDirectory().Count() + 1); // 0 based starting count, result: filename.jpg
+            string actualcompare = comparefile.Remove(0, Directory.GetCurrentDirectory().Count() + 1); // 0 based starting count, result: filename.jpg
+
+
+            Int64 hammingDistance = Hamming(filehashCurrent, filehashCompare);
+
+            return actualCurrent + ";" + actualcompare + ";" + hammingDistance;
+        }
+
 
         static void Main(string[] args)
         {
@@ -348,11 +421,94 @@ namespace Hashing
             List<string> ghashlist = new List<string>();
             List<string> phashlist = new List<string>();
 
+            ConcurrentBag<string> ahashcb = new ConcurrentBag<string>();
+            ConcurrentBag<string> dhashcb = new ConcurrentBag<string>();
+            ConcurrentBag<string> ghashcb = new ConcurrentBag<string>();
+            ConcurrentBag<string> phashcb = new ConcurrentBag<string>();
+
+
+            string fileToWritea = "hashes_ahash.txt";
+            string fileToWrited = "hashes_dhash.txt";
+            string fileToWriteg = "hashes_ghash.txt";
+            string fileToWritep = "hashes_phash.txt";
+
+
+            TextWriter twa = new StreamWriter(fileToWritea);
+            TextWriter twd = new StreamWriter(fileToWrited);
+            TextWriter twg = new StreamWriter(fileToWriteg);
+            TextWriter twp = new StreamWriter(fileToWritep);
+
+           
+
+            DateTime now = DateTime.Now;
+            Console.WriteLine(now);
+
+            foreach (var currentFile in files)
+            {
+                Parallel.ForEach(files, (search) =>
+                {
+                    ahashcb.Add(p.csvInput_aHash(currentFile, search));
+                    //dhashcb.Add(p.csvInput_dHash(currentFile, search));
+                    //ghashcb.Add(p.csvInput_gHash(currentFile, search));
+                    //phashcb.Add(p.csvInput_pHash(currentFile, search));
+                    
+                    
+                    
+                });
+
+                
+                // TODO: Make the writing more effecient + in parallel.
+                foreach (var item in ahashcb)
+                {
+                    twa.WriteLine(item);
+                }
+                foreach (var item in dhashcb)
+                {
+                    twd.WriteLine(item);
+                }
+                foreach (var item in ghashcb)
+                {
+                    twg.WriteLine(item);
+                }
+                foreach (var item in phashcb)
+                {
+                    twp.WriteLine(item);
+                }
+            }
+
+
+
+            DateTime afterWork = DateTime.Now;
+            Console.WriteLine("Finished at "+afterWork);
 
 
 
 
 
+
+
+            // Stage 2
+            // Sort the hashes based on the hamming distance
+            // 2.1 Select one image and do the sorting from that
+
+            // The _*list_ now looks like this: filename.jpg;HASH  filename.jpg;HASH etc
+            // I want something that ties those two together, so when I sort the hash, the filenames are sorted too
+            // Key:Value thing an idea?
+            // Also, how do I sort by hamming distance? I have a function ^^ that does something like it,
+            // but do I use it on the entire list and sort by lowest difference (and how do I get lowest difference?)
+            //
+
+            // Ideally I want a database type thing where any sorting change results in moving of all the attached data
+            // hash attached to filename
+            // hamming distance attached to filename.
+            // 
+
+            //Idea: 
+            // For each jpg, create a csv file with all the jpg-names;hamming distance from current file
+            // this way we can do some excel sorting without resorting to something crazy like a 3-layer list. 
+
+
+            // OLD: 
             //Stage 1.1: 
             // Create text file, keep it open
             //string fileToWritea = "hashesa.txt";
@@ -382,16 +538,6 @@ namespace Hashing
             //twd.WriteLine("dHash");
             //twg.WriteLine("gHash");
             //twp.WriteLine("pHash");
-
-
-            Parallel.ForEach(files, (currentFile) =>
-            {
-                ahashlist.Add(p.FilenameAnd_a_Hash(currentFile));
-                //dhashlist.Add(p.FilenameAnd_d_Hash(currentFile));
-                //ghashlist.Add(p.FilenameAnd_g_Hash(currentFile));
-                //phashlist.Add(p.FilenameAnd_p_Hash(currentFile));
-
-            });
 
             /*
             foreach (string file in files)
@@ -454,29 +600,13 @@ namespace Hashing
             //twd.Close();
             //twg.Close();
             //twp.Close();
-            
-            
-            
-
-
-            // Stage 2
-            // Sort the hashes based on the hamming distance
-            // 2.1 Select one image and do the sorting from that
-
-            // The _*list_ now looks like this: filename.jpg;HASH  filename.jpg;HASH etc
-            // I want something that ties those two together, so when I sort the hash, the filenames are sorted too
-            // Key:Value thing an idea?
-            // Also, how do I sort by hamming distance? I have a function ^^ that does something like it,
-            // but do I use it on the entire list and sort by lowest difference (and how do I get lowest difference?)
-            //
-
-            // Ideally I want a database type thing where any sorting change results in moving of all the attached data
-            // hash attached to filename
-            // hamming distance attached to filename.
-            // 
 
 
 
+            //ahashlist.Add(p.FilenameAnd_a_Hash(currentFile)); // add    filename;aHash  to the list
+            //dhashlist.Add(p.FilenameAnd_d_Hash(currentFile));
+            //ghashlist.Add(p.FilenameAnd_g_Hash(currentFile));
+            //phashlist.Add(p.FilenameAnd_p_Hash(currentFile));
 
         }
     }
