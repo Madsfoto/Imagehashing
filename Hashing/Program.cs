@@ -434,46 +434,76 @@ namespace Hashing
 
 
             TextWriter twa = new StreamWriter(fileToWritea);
-            TextWriter twd = new StreamWriter(fileToWrited);
-            TextWriter twg = new StreamWriter(fileToWriteg);
-            TextWriter twp = new StreamWriter(fileToWritep);
+            //TextWriter twd = new StreamWriter(fileToWrited);
+            //TextWriter twg = new StreamWriter(fileToWriteg);
+            //TextWriter twp = new StreamWriter(fileToWritep);
 
            
 
             DateTime now = DateTime.Now;
             Console.WriteLine(now);
+            int filenumber = 0;
+            int totalLinesWritten = 0;
 
             foreach (var currentFile in files)
             {
                 Parallel.ForEach(files, (search) =>
                 {
-                    ahashcb.Add(p.csvInput_aHash(currentFile, search));
-                    //dhashcb.Add(p.csvInput_dHash(currentFile, search));
-                    //ghashcb.Add(p.csvInput_gHash(currentFile, search));
-                    //phashcb.Add(p.csvInput_pHash(currentFile, search));
+                    if(currentFile!=search)
+                    {
+                        ahashcb.Add(p.csvInput_aHash(currentFile, search));
+                        //dhashcb.Add(p.csvInput_dHash(currentFile, search));
+                        //ghashcb.Add(p.csvInput_gHash(currentFile, search));
+                        //phashcb.Add(p.csvInput_pHash(currentFile, search));
+                        Interlocked.Increment(ref filenumber);
+                    }
+                    else if (currentFile==search)
+                    {
+
+                    }
                     
                     
                     
                 });
-
+                //Console.WriteLine(filenumber);
+                //Console.WriteLine(ahashcb.Count());
                 
                 // TODO: Make the writing more effecient + in parallel.
                 foreach (var item in ahashcb)
                 {
                     twa.WriteLine(item);
+                    totalLinesWritten++;
                 }
+                Console.WriteLine(totalLinesWritten);
                 foreach (var item in dhashcb)
                 {
-                    twd.WriteLine(item);
+                    //twd.WriteLine(item);
                 }
                 foreach (var item in ghashcb)
                 {
-                    twg.WriteLine(item);
+                    //twg.WriteLine(item);
                 }
                 foreach (var item in phashcb)
                 {
-                    twp.WriteLine(item);
+                    //twp.WriteLine(item);
                 }
+
+                totalLinesWritten = 0;
+                while (ahashcb.Count > 0)
+
+                {
+
+                    string element;
+
+                    if (ahashcb.TryTake(out element))
+
+                    {
+
+                    }
+
+                }
+
+
             }
 
 
@@ -506,6 +536,10 @@ namespace Hashing
             //Idea: 
             // For each jpg, create a csv file with all the jpg-names;hamming distance from current file
             // this way we can do some excel sorting without resorting to something crazy like a 3-layer list. 
+
+
+
+
 
 
             // OLD: 
