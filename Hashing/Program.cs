@@ -375,7 +375,7 @@ namespace Hashing
             string actualCurrent = currentfile.Remove(0, Directory.GetCurrentDirectory().Count() + 1); // 0 based starting count, result: filename.jpg
             string actualcompare = comparefile.Remove(0, Directory.GetCurrentDirectory().Count() + 1); // 0 based starting count, result: filename.jpg
 
-
+            
             Int64 hammingDistance = Hamming(filehashCurrent, filehashCompare);
 
             return actualCurrent + ";" + actualcompare + ";" + hammingDistance;
@@ -399,6 +399,36 @@ namespace Hashing
             return actualCurrent + ";" + actualcompare + ";" + hammingDistance;
         }
 
+        public string hashToCluster(string currentfile, string hashAlgo)
+        {
+            Bitmap bm = new Bitmap(currentfile);
+            UInt64 filehash = 0;
+            if (hashAlgo=="aHash")
+            {
+                filehash = aHash(bm);
+            }
+            else if (hashAlgo=="dHash")
+            {
+                filehash = dHash(bm);
+            }
+            else if (hashAlgo=="gHash")
+            {
+                filehash = gHash(bm);
+            }
+            else if (hashAlgo=="pHash")
+            {
+                filehash = pHash(bm);
+            }
+            else
+            {
+                Console.WriteLine("Set hash: aHash, dhash, gHash or pHash");
+            }
+                       
+            bm.Dispose();
+
+            return filehash.ToString();
+
+        }
 
         static void Main(string[] args)
         {
@@ -427,13 +457,13 @@ namespace Hashing
             ConcurrentBag<string> phashcb = new ConcurrentBag<string>();
 
 
-            string fileToWritea = "hashes_ahash.txt";
-            string fileToWrited = "hashes_dhash.txt";
-            string fileToWriteg = "hashes_ghash.txt";
-            string fileToWritep = "hashes_phash.txt";
+            //string fileToWritea = "hashes_ahash.txt";
+            //string fileToWrited = "hashes_dhash.txt";
+            //string fileToWriteg = "hashes_ghash.txt";
+            //string fileToWritep = "hashes_phash.txt";
 
 
-            TextWriter twa = new StreamWriter(fileToWritea);
+            //TextWriter twa = new StreamWriter(fileToWritea);
             //TextWriter twd = new StreamWriter(fileToWrited);
             //TextWriter twg = new StreamWriter(fileToWriteg);
             //TextWriter twp = new StreamWriter(fileToWritep);
@@ -442,19 +472,40 @@ namespace Hashing
 
             DateTime now = DateTime.Now;
             Console.WriteLine(now);
-            int filenumber = 0;
+            
             int totalLinesWritten = 0;
+            string hashname = "pHash";
+            TextWriter twh = new StreamWriter("hash_"+hashname+".txt");
 
-            foreach (var currentFile in files)
+            Parallel.ForEach(files, (currentFile) =>
             {
+                //string actualCurrentFile = currentFile.Remove(0, Directory.GetCurrentDirectory().Count() + 1);
+            
+
+                ahashcb.Add(p.hashToCluster(currentFile, hashname));
+                
+
+            });
+
+            // sequential through all the files, compare
+            /*foreach (var currentFile in files)
+            {
+                string actualCurrentFile = currentFile.Remove(0, Directory.GetCurrentDirectory().Count() + 1);
+
+                TextWriter actualTW = new StreamWriter(actualCurrentFile+".txt"); // Create a txt file for each jpg file in the current dir
+                // Do I want one file per image or one file per image per hashing algorithm?
+                // I think I want one file per image with 1 algorithm testing all 4 to find the best one. 
+                // the way hashToCluster is written is to make it easy to switch between the algorithms. 
+
                 Parallel.ForEach(files, (search) =>
                 {
                     if(currentFile!=search)
                     {
-                        ahashcb.Add(p.csvInput_aHash(currentFile, search));
+                        //ahashcb.Add(p.csvInput_aHash(currentFile, search));
                         //dhashcb.Add(p.csvInput_dHash(currentFile, search));
                         //ghashcb.Add(p.csvInput_gHash(currentFile, search));
                         //phashcb.Add(p.csvInput_pHash(currentFile, search));
+                        ahashcb.Add(p.hashToCluster(search, "aHash"));
                         Interlocked.Increment(ref filenumber);
                     }
                     else if (currentFile==search)
@@ -465,16 +516,25 @@ namespace Hashing
                     
                     
                 });
-                //Console.WriteLine(filenumber);
-                //Console.WriteLine(ahashcb.Count());
-                
-                // TODO: Make the writing more effecient + in parallel.
-                foreach (var item in ahashcb)
+                */
+            //Console.WriteLine(filenumber);
+            //Console.WriteLine(ahashcb.Count());
+
+            // TODO: Make the writing more effecient + in parallel.
+
+            foreach (var item in ahashcb)
+            {
+                twh.WriteLine(item);
+                totalLinesWritten++;
+            }
+
+
+            foreach (var item in ahashcb)
                 {
-                    twa.WriteLine(item);
-                    totalLinesWritten++;
+                    //actualTW.WriteLine(item);
+                    //totalLinesWritten++;
                 }
-                Console.WriteLine(totalLinesWritten);
+                
                 foreach (var item in dhashcb)
                 {
                     //twd.WriteLine(item);
@@ -504,144 +564,143 @@ namespace Hashing
                 }
 
 
-            }
+            
 
 
 
             DateTime afterWork = DateTime.Now;
             Console.WriteLine("Finished at "+afterWork);
+        }
 
 
 
 
 
 
+        // Stage 2
+        // Sort the hashes based on the hamming distance
+        // 2.1 Select one image and do the sorting from that
 
-            // Stage 2
-            // Sort the hashes based on the hamming distance
-            // 2.1 Select one image and do the sorting from that
+        // The _*list_ now looks like this: filename.jpg;HASH  filename.jpg;HASH etc
+        // I want something that ties those two together, so when I sort the hash, the filenames are sorted too
+        // Key:Value thing an idea?
+        // Also, how do I sort by hamming distance? I have a function ^^ that does something like it,
+        // but do I use it on the entire list and sort by lowest difference (and how do I get lowest difference?)
+        //
 
-            // The _*list_ now looks like this: filename.jpg;HASH  filename.jpg;HASH etc
-            // I want something that ties those two together, so when I sort the hash, the filenames are sorted too
-            // Key:Value thing an idea?
-            // Also, how do I sort by hamming distance? I have a function ^^ that does something like it,
-            // but do I use it on the entire list and sort by lowest difference (and how do I get lowest difference?)
-            //
+        // Ideally I want a database type thing where any sorting change results in moving of all the attached data
+        // hash attached to filename
+        // hamming distance attached to filename.
+        // 
 
-            // Ideally I want a database type thing where any sorting change results in moving of all the attached data
-            // hash attached to filename
-            // hamming distance attached to filename.
-            // 
-
-            //Idea: 
-            // For each jpg, create a csv file with all the jpg-names;hamming distance from current file
-            // this way we can do some excel sorting without resorting to something crazy like a 3-layer list. 
-
+        //Idea: 
+        // For each jpg, create a csv file with all the jpg-names;hamming distance from current file
+        // this way we can do some excel sorting without resorting to something crazy like a 3-layer list. 
 
 
 
 
 
-            // OLD: 
-            //Stage 1.1: 
-            // Create text file, keep it open
-            //string fileToWritea = "hashesa.txt";
-            //string fileToWrited = "hashesd.txt";
-            //string fileToWriteg = "hashesg.txt";
-            //string fileToWritep = "hashesp.txt";
+
+        // OLD: 
+        //Stage 1.1: 
+        // Create text file, keep it open
+        //string fileToWritea = "hashesa.txt";
+        //string fileToWrited = "hashesd.txt";
+        //string fileToWriteg = "hashesg.txt";
+        //string fileToWritep = "hashesp.txt";
 
 
-            //TextWriter twa = new StreamWriter(fileToWritea);
-            //TextWriter twd = new StreamWriter(fileToWrited);
-            //TextWriter twg = new StreamWriter(fileToWriteg);
-            //TextWriter twp = new StreamWriter(fileToWritep);
+        //TextWriter twa = new StreamWriter(fileToWritea);
+        //TextWriter twd = new StreamWriter(fileToWrited);
+        //TextWriter twg = new StreamWriter(fileToWriteg);
+        //TextWriter twp = new StreamWriter(fileToWritep);
 
 
-            // Line 1: 
-            // Hash type
+        // Line 1: 
+        // Hash type
 
-            // in the loop, write filename;hashName
-
-
-            //string hasha = "";
-            //string hashd = "";
-            //string hashg = "";
-            //string hashp = "";
-
-            //twa.WriteLine("aHash");
-            //twd.WriteLine("dHash");
-            //twg.WriteLine("gHash");
-            //twp.WriteLine("pHash");
-
-            /*
-            foreach (string file in files)
-            {
-                //aHash   
-                hasha = p.FilenameAnd_a_Hash(file);
-                twa.WriteLine(hasha);
-
-            }
-            //tw.WriteLine("dHash");
-            foreach (string file in files)
-            {
-                // dhash
-                hashd = p.FilenameAnd_d_Hash(file);
-                twd.WriteLine(hashd);
-
-            }
-            //tw.WriteLine("gHash");
-            foreach (string file in files)
-            {
-                //gHash
-                hashg = p.FilenameAnd_g_Hash(file);
-                twg.WriteLine(hashg);
-            }
-            //tw.WriteLine("pHash");
-            foreach (string file in files)
-            {
-                // pHash
-                hashp = p.FilenameAnd_p_Hash(file);
-                twp.WriteLine(hashp);
-            }
-            */
-            /*
-            TextWriter.Synchronized(tw);
-
-            tw.WriteLine("aHash");
-            Parallel.ForEach(files, (currentFile) =>
-            {
-                tw.WriteLine(p.FilenameAnd_a_Hash(currentFile));
-            });
-            tw.WriteLine("dHash");
-            Parallel.ForEach(files, (currentFile) =>
-            {
-                tw.WriteLine(p.FilenameAnd_d_Hash(currentFile));
-            });
-            tw.WriteLine("gHash");
-            Parallel.ForEach(files, (currentFile) =>
-            {
-                tw.WriteLine(p.FilenameAnd_g_Hash(currentFile));
-            });
-            tw.WriteLine("pHash");
-            Parallel.ForEach(files, (currentFile) =>
-            {
-                tw.WriteLine(p.FilenameAnd_p_Hash(currentFile));
-            });
-            */
-
-            // close file. 
-            //twa.Close();
-            //twd.Close();
-            //twg.Close();
-            //twp.Close();
+        // in the loop, write filename;hashName
 
 
+        //string hasha = "";
+        //string hashd = "";
+        //string hashg = "";
+        //string hashp = "";
 
-            //ahashlist.Add(p.FilenameAnd_a_Hash(currentFile)); // add    filename;aHash  to the list
-            //dhashlist.Add(p.FilenameAnd_d_Hash(currentFile));
-            //ghashlist.Add(p.FilenameAnd_g_Hash(currentFile));
-            //phashlist.Add(p.FilenameAnd_p_Hash(currentFile));
+        //twa.WriteLine("aHash");
+        //twd.WriteLine("dHash");
+        //twg.WriteLine("gHash");
+        //twp.WriteLine("pHash");
+
+        /*
+        foreach (string file in files)
+        {
+            //aHash   
+            hasha = p.FilenameAnd_a_Hash(file);
+            twa.WriteLine(hasha);
 
         }
+        //tw.WriteLine("dHash");
+        foreach (string file in files)
+        {
+            // dhash
+            hashd = p.FilenameAnd_d_Hash(file);
+            twd.WriteLine(hashd);
+
+        }
+        //tw.WriteLine("gHash");
+        foreach (string file in files)
+        {
+            //gHash
+            hashg = p.FilenameAnd_g_Hash(file);
+            twg.WriteLine(hashg);
+        }
+        //tw.WriteLine("pHash");
+        foreach (string file in files)
+        {
+            // pHash
+            hashp = p.FilenameAnd_p_Hash(file);
+            twp.WriteLine(hashp);
+        }
+        */
+        /*
+        TextWriter.Synchronized(tw);
+
+        tw.WriteLine("aHash");
+        Parallel.ForEach(files, (currentFile) =>
+        {
+            tw.WriteLine(p.FilenameAnd_a_Hash(currentFile));
+        });
+        tw.WriteLine("dHash");
+        Parallel.ForEach(files, (currentFile) =>
+        {
+            tw.WriteLine(p.FilenameAnd_d_Hash(currentFile));
+        });
+        tw.WriteLine("gHash");
+        Parallel.ForEach(files, (currentFile) =>
+        {
+            tw.WriteLine(p.FilenameAnd_g_Hash(currentFile));
+        });
+        tw.WriteLine("pHash");
+        Parallel.ForEach(files, (currentFile) =>
+        {
+            tw.WriteLine(p.FilenameAnd_p_Hash(currentFile));
+        });
+        */
+
+        // close file. 
+        //twa.Close();
+        //twd.Close();
+        //twg.Close();
+        //twp.Close();
+
+
+
+        //ahashlist.Add(p.FilenameAnd_a_Hash(currentFile)); // add    filename;aHash  to the list
+        //dhashlist.Add(p.FilenameAnd_d_Hash(currentFile));
+        //ghashlist.Add(p.FilenameAnd_g_Hash(currentFile));
+        //phashlist.Add(p.FilenameAnd_p_Hash(currentFile));
+
     }
-}
+    }
