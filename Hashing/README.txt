@@ -1,3 +1,7 @@
-﻿Currently (july 2018) hashes (or has the potential to) all files in the current directory where the .exe is located. 
+﻿Currently (july 2018) hashes all jpg files in the current directory where the .exe is located. 
 
-The plan is to sort the hashed results based on the hamming distance to make the images that are closest from a hash-result standpoint together, so the visually similiar images are together.
+Creates 1 txt file per jpg in the current directory with the hamming distance to every other jpg file in the current directory. 
+
+To change output: Change the returnstr on line 432.
+
+To change hashing algorithm: Change the text on line 456 to either aHash, dHash, pHash or gHash.
